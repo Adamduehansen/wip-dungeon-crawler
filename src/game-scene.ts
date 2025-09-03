@@ -1,21 +1,45 @@
 import * as ex from "excalibur";
+import { Resources } from "./resources.ts";
 // import { SocketManager } from "./socket-manager.ts";
 
+const spritesheet = ex.SpriteSheet.fromImageSource({
+  image: Resources.spritesheet,
+  grid: {
+    columns: 16,
+    rows: 10,
+    spriteHeight: 8,
+    spriteWidth: 8,
+  },
+  spacing: {
+    margin: {
+      x: 1,
+      y: 1,
+    },
+  },
+});
+
+interface HeroArgs {
+  pos: ex.Vector;
+}
+
 class Hero extends ex.Actor {
-  constructor() {
+  constructor(args: HeroArgs) {
     super({
+      name: "Hero",
       color: ex.Color.Red,
       width: 16,
       height: 16,
-      pos: ex.vec(100, 100),
+      pos: args.pos,
     });
+
+    this.graphics.use(spritesheet.getSprite(4, 0));
 
     this._makeDownHandler = this._makeDownHandler.bind(this);
   }
 
   private _makeDownHandler(): ex.Handler<ex.PointerEvent> {
     return (event) => {
-      this.pos = event.pagePos;
+      this.pos = event.worldPos;
       // TODO: Send new position to server
     };
   }
@@ -44,12 +68,18 @@ class Hero extends ex.Actor {
 //   }
 // }
 
-type TileData = [["", "", ""], ["", "", ""], ["", "", ""]];
+type TileData = [
+  ["", "", "", ""],
+  ["", "", "", ""],
+  ["", "", "", ""],
+  ["", "", "", ""],
+];
 
-const tile1: TileData = [
-  ["", "", ""],
-  ["", "", ""],
-  ["", "", ""],
+const tileData1: TileData = [
+  ["", "", "", ""],
+  ["", "", "", ""],
+  ["", "", "", ""],
+  ["", "", "", ""],
 ];
 
 interface CellArgs {
@@ -60,11 +90,14 @@ interface CellArgs {
 class Cell extends ex.Actor {
   constructor(args: CellArgs) {
     super({
-      height: 16,
-      width: 16,
+      name: "Cell",
+      height: 8,
+      width: 8,
       color: ex.Color.Green,
-      pos: ex.vec(args.column * 16, args.row * 16),
+      pos: ex.vec(args.column * 8, args.row * 8),
     });
+
+    this.graphics.use(spritesheet.getSprite(1, 1));
   }
 }
 
@@ -72,7 +105,9 @@ class Tile extends ex.Actor {
   #tileData: TileData;
 
   constructor(tileData: TileData) {
-    super();
+    super({
+      name: "Tile",
+    });
     this.#tileData = tileData;
   }
 
@@ -90,6 +125,36 @@ class Tile extends ex.Actor {
       }
     }
   }
+
+  static #getAdjacentPos(
+    side: "top" | "right" | "bottom" | "left",
+    pos: ex.Vector,
+  ): ex.Vector | never {
+    switch (side) {
+      case "top": {
+        return ex.vec(pos.x, pos.y - 8 * 4);
+      }
+      case "right": {
+        return ex.vec(pos.x + 8 * 4, pos.y);
+      }
+      case "bottom": {
+        return ex.vec(pos.x, pos.y + 8 * 4);
+      }
+      case "left": {
+        return ex.vec(pos.x - 8 * 4, pos.y);
+      }
+    }
+  }
+
+  static adjacentTo(args: {
+    tile: Tile;
+    side: "top" | "right" | "bottom" | "left";
+    data: TileData;
+  }): Tile {
+    const newTile = new Tile(args.data);
+    newTile.pos = Tile.#getAdjacentPos(args.side, args.tile.pos);
+    return newTile;
+  }
 }
 
 export class GameScene extends ex.Scene {
@@ -102,10 +167,29 @@ export class GameScene extends ex.Scene {
 
   override onInitialize(_engine: ex.Engine): void {
     // this.add(new SocketStatusLabel());
-    this.#hero = new Hero();
+    this.#hero = new Hero({
+      pos: ex.vec(0, 0),
+    });
     this.#hero.z = 10;
     this.add(this.#hero);
 
-    this.add(new Tile(tile1));
+    this.camera.strategy.lockToActor(this.#hero);
+    this.camera.zoom = 3;
+
+    const tile1 = new Tile(tileData1);
+    const tile2 = Tile.adjacentTo({
+      tile: tile1,
+      side: "right",
+      data: tileData1,
+    });
+    const tile3 = Tile.adjacentTo({
+      tile: tile2,
+      side: "bottom",
+      data: tileData1,
+    });
+
+    this.add(tile1);
+    this.add(tile2);
+    this.add(tile3);
   }
 }
