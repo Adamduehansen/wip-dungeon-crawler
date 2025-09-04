@@ -42,7 +42,7 @@ class Cell extends ex.Actor {
     this.graphics.use(spritesheet.getSprite(1, 1).clone());
   }
 
-  override onInitialize(engine: ex.Engine): void {
+  override onInitialize(_engine: ex.Engine): void {
     this.on("pointerenter", () => {
       this.graphics.current!.tint = ex.Color.Green;
     });

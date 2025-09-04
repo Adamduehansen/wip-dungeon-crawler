@@ -101,7 +101,10 @@ export class GameScene extends ex.Scene {
     this.#hero.z = 10;
     this.add(this.#hero);
 
-    this.camera.strategy.lockToActor(this.#hero);
+    // this.camera.strategy.lockToActor(this.#hero);
+    // this.camera.zoom = 3;
+
+    this.camera.pos = ex.vec(0, 0);
     this.camera.zoom = 3;
 
     const tile1 = new Tile(tileData1);
