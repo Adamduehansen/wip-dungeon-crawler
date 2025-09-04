@@ -39,7 +39,17 @@ class Cell extends ex.Actor {
       pos: ex.vec(args.column * 8, args.row * 8),
     });
 
-    this.graphics.use(spritesheet.getSprite(1, 1));
+    this.graphics.use(spritesheet.getSprite(1, 1).clone());
+  }
+
+  override onInitialize(engine: ex.Engine): void {
+    this.on("pointerenter", () => {
+      this.graphics.current!.tint = ex.Color.Green;
+    });
+
+    this.on("pointerleave", () => {
+      this.graphics.current!.tint = undefined;
+    });
   }
 }
 
